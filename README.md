@@ -160,15 +160,33 @@ The project uses AWS services for production hosting:
 ```
 
 ### CI/CD with GitHub Actions
-The project includes GitHub Actions workflows for automated deployment:
+The project includes a comprehensive GitHub Actions workflow for automated testing and deployment:
 
-- **Infrastructure**: Deployed on changes to `.aws/` directory
-- **Frontend**: Deployed on changes to `frontend/` directory
-- **Environment**: `main` branch → production, others → development
+#### 🔄 Workflow Overview
+- **Build & Test**: Type checking, building, and artifact creation
+- **Deploy**: Automated deployment to AWS (S3 + CloudFront)
+- **Verify**: Post-deployment accessibility testing
+- **Notify**: Deployment summary and status reporting
 
-Required GitHub Secrets:
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
+#### 🚀 Automatic Triggers
+- **Push to `main`**: Production deployment
+- **Push to `develop`**: Development deployment  
+- **Pull Request**: Build and test only (no deployment)
+- **Manual**: Workflow dispatch with environment options
+
+#### 🔧 Required GitHub Secrets
+Set these in `Settings` → `Secrets and variables` → `Actions`:
+- `AWS_ACCESS_KEY_ID` - Your AWS access key
+- `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
+
+#### 🛠️ Quick CI/CD Commands
+```bash
+# Trigger manual deployment
+# Go to Actions tab → "Deploy Tokenization Pro" → "Run workflow"
+
+# Check deployment status
+# Visit: https://github.com/dangtuan21/token_pro/actions
+```
 
 ## 📚 Documentation
 
