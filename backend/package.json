@@ -1,0 +1,27 @@
+{
+  "name": "backend",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun index.ts",
+    "dev": "bun --watch --env-file=.env.local index.ts",
+    "dev:staging": "bun --watch --env-file=.env.staging index.ts",
+    "prod": "NODE_ENV=production bun index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.4.0",
+    "@elysiajs/graphql-yoga": "^1.4.0",
+    "@types/pg": "^8.15.6",
+    "elysia": "^1.4.13",
+    "graphql": "^16.12.0",
+    "graphql-yoga": "^5.16.0",
+    "pg": "^8.16.3"
+  }
+}
