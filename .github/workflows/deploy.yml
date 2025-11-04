@@ -106,6 +106,10 @@ jobs:
         name: frontend-build
         path: frontend/dist/
 
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: bun install
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
