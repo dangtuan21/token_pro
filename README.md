@@ -1,13 +1,53 @@
 # Tokenization Pro
 
+[![Deploy Status](https://github.com/dangtuan21/token_pro/actions/workflows/deploy.yml/badge.svg)](https://github.com/dangtuan21/token_pro/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Bun](https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white)](https://bun.sh/)
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
+
 A modern tokenization application built with Bun runtime, featuring React frontend and AWS cloud infrastructure.
+
+🔗 **Repository**: [https://github.com/dangtuan21/token_pro](https://github.com/dangtuan21/token_pro)
+
+## ✨ Features
+
+- 🔥 **Ultra-fast** build and runtime with Bun
+- ⚛️ **Modern React** frontend with TypeScript
+- ☁️ **AWS Cloud** infrastructure with CloudFormation
+- 🌐 **Global CDN** with CloudFront distribution
+- 🔒 **Secure** HTTPS with automatic certificates
+- 🚀 **CI/CD Ready** with GitHub Actions
+- 📱 **Responsive** design for all devices
+- 🛠️ **Developer friendly** with hot reload and fast builds
+
+## 🏗️ Technology Stack
+
+### Frontend
+- **Runtime**: [Bun](https://bun.sh/) - Lightning fast JavaScript runtime
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Bun's native bundler
+- **Styling**: Modern CSS with responsive design
+
+### Backend & Infrastructure  
+- **Cloud**: AWS (S3, CloudFront, CloudFormation)
+- **CDN**: CloudFront with edge caching
+- **Security**: IAM roles and Origin Access Control
+- **CI/CD**: GitHub Actions
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- [Bun](https://bun.sh/) runtime installed
+- [Bun](https://bun.sh/) runtime installed (v1.0 or higher)
 - [AWS CLI](https://aws.amazon.com/cli/) configured
 - AWS account with appropriate permissions
+- Node.js 18+ (for compatibility)
+
+### Clone and Setup
+```bash
+git clone https://github.com/dangtuan21/token_pro.git
+cd token_pro
+```
 
 ### Development
 ```bash
@@ -27,19 +67,26 @@ bun run dev
 
 ```
 tokenization/
-├── frontend/              # React frontend application
-│   ├── src/              # Source code
-│   ├── build.ts          # Bun build configuration
-│   └── package.json      # Frontend dependencies
-├── backend/              # Backend services
-├── scripts/              # Deployment scripts
-│   ├── deploy.sh         # Complete deployment script
-│   └── README.md
-├── .aws/                 # AWS CloudFormation templates
-│   ├── infrastructure.yml
-│   └── README.md
-└── .github/workflows/    # CI/CD pipelines
-    └── deploy.yml
+├── 📁 frontend/              # React frontend application
+│   ├── 📁 src/              # Source code (React components, styles)
+│   │   ├── App.tsx          # Main application component  
+│   │   ├── TokenManager.tsx # Token management interface
+│   │   ├── TokenCard.tsx    # Token display component
+│   │   ├── AddTokenModal.tsx# Add token modal component
+│   │   └── types.ts         # TypeScript type definitions
+│   ├── build.ts             # Bun build configuration
+│   ├── package.json         # Frontend dependencies
+│   └── README.md            # Frontend documentation
+├── 📁 backend/              # Backend services (future expansion)
+├── 📁 scripts/              # Deployment and utility scripts
+│   ├── deploy.sh            # Complete deployment script
+│   └── README.md            # Scripts documentation
+├── 📁 .aws/                 # AWS CloudFormation templates
+│   ├── infrastructure.yml   # AWS infrastructure definition
+│   └── README.md            # AWS setup guide
+├── 📁 .github/workflows/    # CI/CD pipelines
+│   └── deploy.yml           # GitHub Actions workflow
+└── README.md               # This file
 ```
 
 ## 🛠️ Available Commands
@@ -78,15 +125,6 @@ The project uses AWS services for production hosting:
 ✅ CI/CD ready deployment  
 
 ## 🔧 Configuration
-
-### Environment Variables
-Copy `.env.example` to `.env` and configure:
-
-```bash
-AWS_REGION=us-east-1
-ENVIRONMENT=development
-PROJECT_NAME=tokenization
-```
 
 ### Custom Domain (Optional)
 1. Create SSL certificate in AWS Certificate Manager
@@ -148,11 +186,19 @@ After deployment, monitor your application:
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
+1. Fork the repository from [https://github.com/dangtuan21/token_pro](https://github.com/dangtuan21/token_pro)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Test deployment scripts
-5. Submit a pull request
+4. Test deployment scripts in a development environment
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Development Guidelines
+- Follow TypeScript best practices
+- Test all AWS deployments in development first
+- Update documentation for new features
+- Ensure backward compatibility
 
 ## 📄 License
 
@@ -161,7 +207,14 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For issues and questions:
-1. Check the documentation in each directory
-2. Review AWS CloudFormation events for deployment issues
-3. Verify AWS credentials and permissions
-4. Check GitHub Actions logs for CI/CD issues
+
+1. **Documentation**: Check the comprehensive docs in each directory
+2. **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/dangtuan21/token_pro/issues)
+3. **AWS Troubleshooting**: Review CloudFormation events for deployment issues
+4. **Credentials**: Verify AWS credentials and permissions
+5. **CI/CD**: Check GitHub Actions logs for pipeline issues
+
+### Common Issues
+- **Bun not found**: Ensure Bun is installed and in your PATH
+- **AWS permissions**: Verify your AWS user has CloudFormation, S3, and CloudFront permissions
+- **Build failures**: Check Node.js compatibility and dependency versions
