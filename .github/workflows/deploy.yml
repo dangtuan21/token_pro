@@ -120,5 +120,4 @@ jobs:
       run: |
         cd frontend
         bun run build
-        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
-        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        aws s3 sync dist/ s3://tokenization-frontend-273204284763 --delete
