@@ -23,14 +23,14 @@ export function TokenManager() {
       // Provide more specific error messages and fallback to mock data
       if (err instanceof Error) {
         if (err.message.includes('NetworkError') || err.message.includes('fetch')) {
-          setError('⚠️ Mixed content error: HTTPS frontend cannot access HTTP backend. Showing demo data below. Backend running at: http://18.233.9.11:3010/graphql');
+          setError('⚠️ Mixed content error: HTTPS frontend cannot access HTTP backend. Showing demo data below. Backend running at: http://tokenization-alb-934672107.us-east-1.elb.amazonaws.com/graphql');
         } else if (err.message.includes('CORS')) {
           setError('🔒 CORS error: Cross-origin request blocked. Showing demo data below.');
         } else {
           setError(`❌ Error: ${err.message}. Showing demo data below.`);
         }
       } else {
-        setError('❌ Failed to load tokens. Showing demo data below. Backend URL: http://18.233.9.11:3010/graphql');
+        setError('❌ Failed to load tokens. Showing demo data below. Backend URL: http://tokenization-alb-934672107.us-east-1.elb.amazonaws.com/graphql');
       }
       
       // Fallback to demo data when backend is not accessible
