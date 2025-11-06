@@ -15,7 +15,7 @@ const app = new Elysia()
     resolvers,
     graphqlEndpoint: '/graphql',
   }))
-  .get('/', () => 'Token API with Elysia + GraphQL + PostgreSQL! 🚀 [CI/CD TEST - Version 2.1-Test 2.1!]')
+  .get('/', () => 'Token API with Elysia + GraphQL + PostgreSQL! 🚀 [CI/CD TEST - Version 3.0-Infrastructure-Ready!]')
   .get('/api/hello/:name', ({ params: { name } }) => ({
     message: `Hello, ${name}!`,
     version: 'v1.1',
