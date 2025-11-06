@@ -3,6 +3,10 @@ import { yoga } from '@elysiajs/graphql-yoga';
 import { cors } from '@elysiajs/cors';
 import { typeDefs } from './src/schema';
 import { resolvers } from './src/resolvers';
+import { initializeDatabase } from './src/init-db';
+
+// Initialize database on startup
+await initializeDatabase();
 
 // Create Elysia app with GraphQL and CORS
 const app = new Elysia()
