@@ -1,59 +1,40 @@
-# Multi-stage Dockerfile for Bun backend
-# Optimized for production deployment on AWS ECS
+# Use the official Bun image
+FROM oven/bun:1 AS base
+WORKDIR /usr/src/app
 
-# Stage 1: Dependencies installation
-FROM oven/bun:1 AS dependencies
-WORKDIR /app
+# Install dependencies into temp directory
+# This will cache them and speed up future builds
+FROM base AS install
+RUN mkdir -p /temp/dev
+COPY package.json bun.lock* /temp/dev/
+RUN cd /temp/dev && bun install --frozen-lockfile
 
-# Copy package files first for better Docker layer caching
-COPY package.json bun.lock* ./
+# Install with --production (exclude devDependencies)
+RUN mkdir -p /temp/prod
+COPY package.json bun.lock* /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production
 
-# Install dependencies
-RUN bun install --frozen-lockfile
-
-# Stage 2: Build stage
-FROM oven/bun:1 AS build
-WORKDIR /app
-
-# Copy dependencies from previous stage
-COPY --from=dependencies /app/node_modules ./node_modules
-
-# Copy source code
+# Copy node_modules from temp directory
+# Then copy all (non-ignored) project files into the image
+FROM base AS prerelease
+COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
-# Build step (if you have a build process)
+# [optional] tests & build
+ENV NODE_ENV=production
+# RUN bun test
 # RUN bun run build
 
-# Stage 3: Production runtime
-FROM oven/bun:1 AS runtime
-WORKDIR /app
+# Copy production dependencies and source code into final image
+FROM base AS release
+COPY --from=install /temp/prod/node_modules node_modules
+COPY --from=prerelease /usr/src/app/index.ts .
+COPY --from=prerelease /usr/src/app/src ./src
+COPY --from=prerelease /usr/src/app/package.json .
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 bunuser
-
-# Copy only production dependencies and built application
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=build /app/src ./src
-COPY --from=build /app/index.ts ./
-COPY --from=build /app/package.json ./
-
-# Set ownership to non-root user
-RUN chown -R bunuser:nodejs /app
-USER bunuser
-
-# Expose the port your app runs on
+# Expose port
 EXPOSE 3010
 
-# Health check for ECS
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:3010/ || exit 1
-
-# Set environment to production
-ENV NODE_ENV=production
-
-# Start the application
+# Run the app
+USER bun
 CMD ["bun", "run", "index.ts"]

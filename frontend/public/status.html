@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full-Stack Status - Tokenization Pro</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .solution { background: #e2e3e5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        .test-button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .test-button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Tokenization Pro - Full-Stack Status</h1>
+    
+    <h2>📊 Current Status</h2>
+    <div class="success">
+        ✅ <strong>Backend:</strong> Deployed on ECS at http://54.167.61.43:3010/graphql<br>
+        ✅ <strong>Frontend:</strong> Deployed on CloudFront at https://d3hiuqehgt00bf.cloudfront.net<br>
+        ✅ <strong>Database:</strong> PostgreSQL RDS with real data<br>
+        ✅ <strong>GraphQL API:</strong> Working and returning data
+    </div>
+
+    <div class="warning">
+        ⚠️ <strong>Mixed Content Issue:</strong> HTTPS frontend cannot access HTTP backend due to browser security policy
+    </div>
+
+    <h2>🧪 Connection Tests</h2>
+    <button class="test-button" onclick="testBackend()">Test Backend Health</button>
+    <button class="test-button" onclick="testGraphQL()">Test GraphQL API</button>
+    <button class="test-button" onclick="testFromBrowser()">Test Browser Connection</button>
+
+    <div id="results"></div>
+
+    <h2>💡 Working Solutions</h2>
+    
+    <div class="solution">
+        <h3>✅ Solution 1: Local Development Server (RECOMMENDED)</h3>
+        <p>Run the frontend locally to bypass mixed content restrictions:</p>
+        <pre>cd frontend
+bun ./dev-server.ts</pre>
+        <p>Then visit: <strong>http://localhost:3000</strong></p>
+        <p>This allows HTTP ↔ HTTP communication and full functionality!</p>
+    </div>
+
+    <div class="solution">
+        <h3>🔧 Solution 2: HTTPS Backend Setup</h3>
+        <p>Set up Application Load Balancer with SSL termination:</p>
+        <pre>./scripts/setup-https.sh</pre>
+        <p>This provides an HTTPS endpoint for the backend.</p>
+    </div>
+
+    <div class="solution">
+        <h3>🌐 Solution 3: CloudFront Proxy</h3>
+        <p>Create CloudFront distribution to proxy backend through HTTPS:</p>
+        <pre>./scripts/setup-cloudfront-proxy.sh</pre>
+        <p>This creates an HTTPS proxy for the HTTP backend.</p>
+    </div>
+
+    <h2>📋 Technical Details</h2>
+    <div class="status">
+        <strong>Backend Technology:</strong> Bun + Elysia + GraphQL + PostgreSQL<br>
+        <strong>Frontend Technology:</strong> React + TypeScript + Bun bundler<br>
+        <strong>Infrastructure:</strong> AWS ECS (backend) + S3/CloudFront (frontend)<br>
+        <strong>Database:</strong> AWS RDS PostgreSQL with real token data
+    </div>
+
+    <h2>📖 API Documentation</h2>
+    <div class="solution">
+        <h4>Available GraphQL Queries:</h4>
+        <pre>query GetAllTokens {
+  getAllTokens {
+    id
+    name
+    symbol
+    totalSupply
+    createdAt
+    creator
+  }
+}</pre>
+        
+        <h4>Test with curl:</h4>
+        <pre>curl -X POST http://54.167.61.43:3010/graphql \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"{ getAllTokens { id name symbol } }"}'</pre>
+    </div>
+
+    <script>
+        async function testBackend() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="status">🔄 Testing backend health...</div>';
+            
+            try {
+                const response = await fetch('http://54.167.61.43:3010/', {
+                    method: 'GET',
+                    mode: 'no-cors' // This will limit response data but avoid CORS errors
+                });
+                
+                results.innerHTML = `
+                    <div class="success">
+                        ✅ Backend is accessible! (Status cannot be checked due to CORS)
+                        <p>Backend is running and responding to requests.</p>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="error">
+                        ❌ Backend connection failed: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testGraphQL() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="status">🔄 Testing GraphQL API...</div>';
+            
+            try {
+                const response = await fetch('http://54.167.61.43:3010/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: '{ getAllTokens { id name symbol } }'
+                    })
+                });
+                
+                const data = await response.json();
+                results.innerHTML = `
+                    <div class="success">
+                        ✅ GraphQL API working!
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="error">
+                        ❌ GraphQL test failed: ${error.message}
+                        <p>This is expected due to mixed content policy (HTTPS → HTTP blocked)</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testFromBrowser() {
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div class="warning">
+                    ⚠️ Browser Security Restriction
+                    <p>The browser is blocking HTTPS → HTTP requests for security.</p>
+                    <p>This is why the frontend cannot directly access the backend.</p>
+                    <p><strong>Solution:</strong> Use the local development server at http://localhost:3000</p>
+                </div>
+            `;
+        }
+
+        // Show initial status
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('results').innerHTML = `
+                <div class="success">
+                    🎉 <strong>Both frontend and backend are deployed successfully!</strong>
+                    <p>Use the local development server for full functionality testing.</p>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

@@ -1,16 +1,8 @@
 import { GraphQLClient } from 'graphql-request';
 
-// API Gateway endpoint - will be updated after deployment
-const getGraphQLEndpoint = () => {
-  if (process.env.NODE_ENV === 'production') {
-    // This will be populated by the CI/CD pipeline from CloudFormation outputs
-    return process.env.REACT_APP_GRAPHQL_ENDPOINT || 'https://your-api-gateway-id.execute-api.us-east-1.amazonaws.com/production/graphql';
-  }
-  // Local development
-  return 'http://localhost:3010/graphql';
-};
+const GRAPHQL_ENDPOINT = 'http://54.173.148.56:3010/graphql';
 
-const client = new GraphQLClient(getGraphQLEndpoint(), {
+const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
   headers: {
     'Content-Type': 'application/json',
   },
