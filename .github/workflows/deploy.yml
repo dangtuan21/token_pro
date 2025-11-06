@@ -66,6 +66,7 @@ jobs:
         curl -fsSL https://bun.sh/install | bash
         export PATH="$HOME/.bun/bin:$PATH"
         cd frontend
+        bun install
         bun run build
 
   build-and-deploy:
@@ -125,5 +126,6 @@ jobs:
         curl -fsSL https://bun.sh/install | bash
         export PATH="$HOME/.bun/bin:$PATH"
         cd frontend
+        bun install
         bun run build
         aws s3 sync dist/ s3://tokenization-frontend-273204284763 --delete
