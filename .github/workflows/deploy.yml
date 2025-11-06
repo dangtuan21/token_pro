@@ -96,6 +96,10 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+    - name: Update task definition with database password
+      run: |
+        sed -i 's/PLACEHOLDER_DB_PASSWORD/${{ secrets.DB_PASSWORD }}/g' ${{ env.ECS_TASK_DEFINITION }}
+
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
