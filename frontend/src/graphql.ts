@@ -1,6 +1,6 @@
 import { GraphQLClient } from 'graphql-request';
 
-const GRAPHQL_ENDPOINT = 'http://tokenization-alb-934672107.us-east-1.elb.amazonaws.com/graphql';
+const GRAPHQL_ENDPOINT = 'http://tokenization-alb-797604911.us-east-1.elb.amazonaws.com/graphql';
 
 const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
   headers: {
