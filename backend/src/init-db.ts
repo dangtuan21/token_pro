@@ -69,21 +69,25 @@ export async function initializeDatabase() {
       console.log('✅ Indexes already exist');
     }
     
-    // Check if sample data migration has been applied
+    // Check if sample data migration has been applied OR if data already exists
     const sampleDataCheck = await pool.query(
       'SELECT version FROM schema_migrations WHERE version = $1', 
       ['003_insert_sample_data']
     );
     
-    if (sampleDataCheck.rows.length === 0) {
+    const existingTokensCheck = await pool.query('SELECT COUNT(*) FROM tokens WHERE symbol IN ($1, $2, $3)', ['BTCS', 'ETHS', 'TOKEN']);
+    const existingTokenCount = parseInt(existingTokensCheck.rows[0].count);
+    
+    if (sampleDataCheck.rows.length === 0 && existingTokenCount === 0) {
       console.log('📝 Applying sample data migration...');
       
-      // Insert sample data
+      // Insert sample data with conflict handling
       await pool.query(`
         INSERT INTO tokens (name, symbol, total_supply, creator) VALUES 
           ($1, $2, $3, $4),
           ($5, $6, $7, $8),
           ($9, $10, $11, $12)
+        ON CONFLICT (symbol) DO NOTHING
       `, [
         'Bitcoin Sample', 'BTCS', '21000000000000000000000000', '0x1234567890123456789012345678901234567890',
         'Ethereum Sample', 'ETHS', '1000000000000000000000000000', '0x2345678901234567890123456789012345678901',
@@ -98,7 +102,17 @@ export async function initializeDatabase() {
       
       console.log('✅ Sample data migration applied');
     } else {
-      console.log('✅ Sample data already exists');
+      if (existingTokenCount > 0) {
+        console.log(`✅ Sample data already exists (${existingTokenCount} tokens found)`);
+      } else {
+        console.log('✅ Sample data migration already marked as applied');
+      }
+      
+      // Make sure migration is marked as applied
+      await pool.query(
+        'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING',
+        ['003_insert_sample_data']
+      );
     }
     
     // Verify data
