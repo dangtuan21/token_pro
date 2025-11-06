@@ -4,31 +4,79 @@ export async function initializeDatabase() {
   try {
     console.log('🚀 Checking and initializing database schema...');
     
-    // Create tokens table
+    // Create migrations table for tracking schema version
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS tokens (
-        id BIGSERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        symbol VARCHAR(10) NOT NULL UNIQUE,
-        total_supply NUMERIC(78, 0) NOT NULL,
-        creator VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version VARCHAR(50) PRIMARY KEY,
+        applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
     
-    // Create indexes
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_tokens_creator ON tokens(creator)');
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_tokens_created_at ON tokens(created_at DESC)');
+    // Check if tokens table migration has been applied
+    const migrationCheck = await pool.query(
+      'SELECT version FROM schema_migrations WHERE version = $1', 
+      ['001_create_tokens_table']
+    );
     
-    console.log('✅ Tables and indexes ensured');
+    if (migrationCheck.rows.length === 0) {
+      console.log('📝 Applying tokens table migration...');
+      
+      // Create tokens table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS tokens (
+          id BIGSERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          symbol VARCHAR(10) NOT NULL UNIQUE,
+          total_supply NUMERIC(78, 0) NOT NULL,
+          creator VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Mark migration as applied
+      await pool.query(
+        'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING',
+        ['001_create_tokens_table']
+      );
+      
+      console.log('✅ Tokens table migration applied');
+    } else {
+      console.log('✅ Tokens table already exists');
+    }
     
-    // Check if we have any data
-    const countResult = await pool.query('SELECT COUNT(*) FROM tokens');
-    const tokenCount = parseInt(countResult.rows[0].count);
+    // Check if indexes migration has been applied
+    const indexMigrationCheck = await pool.query(
+      'SELECT version FROM schema_migrations WHERE version = $1', 
+      ['002_create_indexes']
+    );
     
-    if (tokenCount === 0) {
-      console.log('📝 Inserting sample data...');
+    if (indexMigrationCheck.rows.length === 0) {
+      console.log('📝 Applying indexes migration...');
+      
+      // Create indexes
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_tokens_creator ON tokens(creator)');
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_tokens_created_at ON tokens(created_at DESC)');
+      
+      // Mark migration as applied
+      await pool.query(
+        'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING',
+        ['002_create_indexes']
+      );
+      
+      console.log('✅ Indexes migration applied');
+    } else {
+      console.log('✅ Indexes already exist');
+    }
+    
+    // Check if sample data migration has been applied
+    const sampleDataCheck = await pool.query(
+      'SELECT version FROM schema_migrations WHERE version = $1', 
+      ['003_insert_sample_data']
+    );
+    
+    if (sampleDataCheck.rows.length === 0) {
+      console.log('📝 Applying sample data migration...');
       
       // Insert sample data
       await pool.query(`
@@ -42,9 +90,15 @@ export async function initializeDatabase() {
         'Tokenization Coin', 'TOKEN', '100000000000000000000000000', '0x3456789012345678901234567890123456789012'
       ]);
       
-      console.log('✅ Sample data inserted');
+      // Mark migration as applied
+      await pool.query(
+        'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING',
+        ['003_insert_sample_data']
+      );
+      
+      console.log('✅ Sample data migration applied');
     } else {
-      console.log(`📊 Database already has ${tokenCount} tokens`);
+      console.log('✅ Sample data already exists');
     }
     
     // Verify data
