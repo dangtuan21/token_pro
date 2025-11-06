@@ -10,6 +10,14 @@ A modern tokenization application built with Bun runtime, featuring React fronte
 
 🔗 **Repository**: [https://github.com/dangtuan21/token_pro](https://github.com/dangtuan21/token_pro)
 
+## 🚀 Infrastructure Status
+- **Last Updated**: November 6, 2025
+- **Status**: ✅ All systems operational
+- **Database**: PostgreSQL 15.14 (Fixed from 15.4)
+- **S3 Bucket Policy**: Fixed and validated
+- **Load Balancer**: Active and ready
+- **ECS Cluster**: Ready for deployments
+
 ## ✨ Features
 
 - 🔥 **Ultra-fast** build and runtime with Bun
@@ -31,6 +39,10 @@ A modern tokenization application built with Bun runtime, featuring React fronte
 
 ### Backend & Infrastructure  
 - **Cloud**: AWS (S3, CloudFront, CloudFormation)
+- **Backend**: Bun runtime with TypeScript
+- **API**: GraphQL with PostgreSQL database  
+- **Container**: Docker with multi-stage builds
+- **Orchestration**: AWS ECS Fargate with ALB
 - **CDN**: CloudFront with edge caching
 - **Security**: IAM roles and Origin Access Control
 - **CI/CD**: GitHub Actions
@@ -55,12 +67,23 @@ cd token_pro
 cd frontend
 bun install
 bun run dev
+
+# Start backend development
+cd backend
+bun install
+bun run dev
 ```
 
 ### Production Deployment
 ```bash
-# Complete deployment (infrastructure + frontend)
-./scripts/deploy.sh
+# Complete deployment (frontend + backend + infrastructure)
+./deploy.sh
+
+# Deploy only frontend
+./deploy.sh --skip-backend
+
+# Deploy only backend
+./deploy.sh --skip-frontend
 ```
 
 ## 📁 Project Structure
@@ -77,12 +100,21 @@ tokenization/
 │   ├── build.ts             # Bun build configuration
 │   ├── package.json         # Frontend dependencies
 │   └── README.md            # Frontend documentation
-├── 📁 backend/              # Backend services (future expansion)
+├── 📁 backend/              # Backend API server
+│   ├── 📁 src/              # Source code (GraphQL, database)
+│   │   ├── database.ts      # Database connection & queries
+│   │   ├── resolvers.ts     # GraphQL resolvers
+│   │   ├── schema.ts        # GraphQL schema definition
+│   │   └── types.ts         # TypeScript type definitions
+│   ├── 🐳 Dockerfile        # Container configuration
+│   ├── 🗄️ init.sql          # Database initialization
+│   ├── index.ts             # Server entry point
+│   └── package.json         # Backend dependencies
 ├── 📁 scripts/              # Deployment and utility scripts
-│   ├── deploy.sh            # Complete deployment script
+│   ├── deploy.sh            # Complete deployment script (Frontend + Backend)
 │   └── README.md            # Scripts documentation
 ├── 📁 .aws/                 # AWS CloudFormation templates
-│   ├── infrastructure.yml   # AWS infrastructure definition
+│   ├── infrastructure.yml   # Complete infrastructure (Frontend + Backend)
 │   └── README.md            # AWS setup guide
 ├── 📁 .github/workflows/    # CI/CD pipelines
 │   └── deploy.yml           # GitHub Actions workflow
@@ -93,11 +125,11 @@ tokenization/
 
 ### Direct Script Execution
 ```bash
-./scripts/deploy.sh                      # Deploy everything
-./scripts/deploy.sh --skip-infrastructure # Deploy only frontend
-./scripts/deploy.sh --skip-frontend      # Deploy only infrastructure  
-./scripts/deploy.sh --force-infrastructure # Force infrastructure update
-./scripts/deploy.sh --help               # Show help
+./deploy.sh                      # Deploy everything
+./deploy.sh --skip-infrastructure # Deploy only frontend
+./deploy.sh --skip-frontend      # Deploy only infrastructure  
+./deploy.sh --force-infrastructure # Force infrastructure update
+./deploy.sh --help               # Show help
 ```
 
 ### Frontend Development
@@ -107,14 +139,52 @@ bun run dev                    # Development server
 bun run build                  # Production build
 ```
 
+### Backend Development
+```bash
+cd backend
+bun run dev                    # Development server with hot reload
+bun run start                  # Production server
+bun run prod                   # Production with NODE_ENV=production
+```
+
+### Backend Deployment Commands
+```bash
+# Deploy everything (infrastructure + containers)
+./deploy.sh
+
+# Deploy only frontend (skip backend)
+./deploy.sh --skip-backend
+
+# Deploy only backend (skip frontend)
+./deploy.sh --skip-frontend
+
+# Force infrastructure update
+./deploy.sh --force-update
+
+# Deploy specific image tag
+./deploy.sh --image-tag v1.2.3
+
+# Deploy to specific environment
+./deploy.sh --environment production
+```
+
 ## ☁️ AWS Infrastructure
 
 The project uses AWS services for production hosting:
 
+**Frontend Infrastructure:**
 - **S3**: Static file hosting
 - **CloudFront**: Global CDN and HTTPS termination
 - **IAM**: Deployment roles and policies
 - **CloudFormation**: Infrastructure as Code
+
+**Backend Infrastructure:**
+- **ECS Fargate**: Containerized backend hosting
+- **ECR**: Docker container registry
+- **Application Load Balancer**: Traffic distribution and health checks
+- **VPC**: Network isolation with public/private subnets
+- **CloudWatch**: Logging and monitoring
+- **Auto Scaling**: Automatic scaling based on CPU/memory
 
 ### Infrastructure Features
 ✅ Global CDN with edge caching  
@@ -144,19 +214,19 @@ The project uses AWS services for production hosting:
 
 2. **Deploy everything:**
    ```bash
-   ./scripts/deploy.sh
+   ./deploy.sh
    ```
 
 ### Regular Updates
 ```bash
 # For frontend changes only
-./scripts/deploy.sh --skip-infrastructure
+./deploy.sh --skip-infrastructure
 
 # For infrastructure changes
-./scripts/deploy.sh --skip-frontend --force-infrastructure
+./deploy.sh --skip-frontend --force-infrastructure
 
 # For complete redeployment
-./scripts/deploy.sh
+./deploy.sh
 ```
 
 ### CI/CD with GitHub Actions
@@ -164,15 +234,17 @@ The project includes a comprehensive GitHub Actions workflow for automated testi
 
 #### 🔄 Workflow Overview
 - **Build & Test**: Type checking, building, and artifact creation
-- **Deploy**: Automated deployment to AWS (S3 + CloudFront)
+- **Build Backend**: Docker build and ECR push (when backend changes)
+- **Deploy**: Automated deployment to AWS (S3 + CloudFront + ECS)
 - **Verify**: Post-deployment accessibility testing
 - **Notify**: Deployment summary and status reporting
 
 #### 🚀 Automatic Triggers
-- **Push to `main`**: Production deployment
-- **Push to `develop`**: Development deployment  
+- **Push to `main`**: Production deployment (frontend + backend)
+- **Push to `develop`**: Development deployment (frontend + backend)
 - **Pull Request**: Build and test only (no deployment)
 - **Manual**: Workflow dispatch with environment options
+- **Smart Detection**: Only builds/deploys changed components
 
 #### 🔧 Required GitHub Secrets
 Set these in `Settings` → `Secrets and variables` → `Actions`:

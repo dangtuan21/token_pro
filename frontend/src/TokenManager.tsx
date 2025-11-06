@@ -19,7 +19,39 @@ export function TokenManager() {
       setTokens(data.getAllTokens);
     } catch (err) {
       console.error('Failed to fetch tokens:', err);
-      setError('Failed to load tokens. Please check if the backend is running.');
+      
+      // Provide more specific error messages and fallback to mock data
+      if (err instanceof Error) {
+        if (err.message.includes('NetworkError') || err.message.includes('fetch')) {
+          setError('⚠️ Mixed content error: HTTPS frontend cannot access HTTP backend. Showing demo data below. Backend running at: http://18.233.9.11:3010/graphql');
+        } else if (err.message.includes('CORS')) {
+          setError('🔒 CORS error: Cross-origin request blocked. Showing demo data below.');
+        } else {
+          setError(`❌ Error: ${err.message}. Showing demo data below.`);
+        }
+      } else {
+        setError('❌ Failed to load tokens. Showing demo data below. Backend URL: http://18.233.9.11:3010/graphql');
+      }
+      
+      // Fallback to demo data when backend is not accessible
+      setTokens([
+        {
+          id: '1',
+          name: 'Sample Token (Demo)',
+          symbol: 'DEMO1',
+          totalSupply: '1000000',
+          creator: '0x1234...abcd',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          name: 'Test Token (Demo)',
+          symbol: 'DEMO2',
+          totalSupply: '500000',
+          creator: '0x5678...efgh',
+          createdAt: new Date().toISOString()
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }
