@@ -10,22 +10,107 @@ A modern tokenization application built with Bun runtime, featuring React fronte
 
 🔗 **Repository**: [https://github.com/dangtuan21/token_pro](https://github.com/dangtuan21/token_pro)
 
+## � Deployment Guide - 3-Phase Process
+
+### **Phase 1: Deploy Infrastructure** 🏗️
+
+First, deploy the complete AWS infrastructure using CloudFormation:
+
+```bash
+# Deploy infrastructure from scratch
+cd .aws
+aws cloudformation deploy \
+  --template-file infrastructure.yml \
+  --stack-name tokenization-infrastructure-v2 \
+  --parameter-overrides DBPassword=YourSecurePassword123! \
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+  --region us-east-1
+```
+
+### **Phase 2: Get Outputs & Update Configuration** ⚙️
+
+After infrastructure deployment, get the outputs and update configuration files:
+
+```bash
+# Get key infrastructure outputs
+aws cloudformation describe-stacks \
+  --stack-name tokenization-infrastructure-v2 \
+  --region us-east-1 \
+  --query 'Stacks[0].Outputs' \
+  --output table
+
+# Key outputs you'll need:
+# - LoadBalancerDNS: Update frontend GraphQL endpoint
+# - DatabaseEndpoint: Verify task definition has correct DB host
+# - FrontendBucketName: Update CI/CD S3 sync target
+# - ECRRepositoryURI: For Docker image pushes
+```
+
+**Update these configuration files:**
+
+1. **Frontend GraphQL Endpoint** (`frontend/src/graphql.ts`):
+   ```typescript
+   const GRAPHQL_ENDPOINT = 'http://YOUR_LOAD_BALANCER_DNS/graphql';
+   ```
+
+2. **Task Definition Database** (`.aws/task-definition.json`):
+   ```json
+   {
+     "name": "DB_HOST",
+     "value": "YOUR_DATABASE_ENDPOINT"
+   }
+   ```
+
+3. **CI/CD S3 Target** (`.github/workflows/deploy.yml`):
+   ```yaml
+   aws s3 sync dist/ s3://YOUR_FRONTEND_BUCKET_NAME --delete
+   ```
+
+### **Phase 3: Run CI/CD** 🚀
+
+Commit configuration changes to trigger automated deployment:
+
+```bash
+# Commit configuration updates
+git add .
+git commit -m "feat: configure endpoints for fresh infrastructure"
+git push origin main
+
+# This triggers GitHub Actions which will:
+# 1. Build and test the application
+# 2. Build Docker image and push to ECR
+# 3. Update ECS task definition
+# 4. Deploy to ECS cluster (creates service if needed)
+# 5. Deploy frontend to S3
+```
+
+**Manual ECS Service Creation** (if first deployment):
+```bash
+# If the ECS service doesn't exist, create it manually:
+aws ecs create-service \
+  --cluster tokenization-cluster \
+  --service-name tokenization-service \
+  --task-definition tokenization-task:latest \
+  --desired-count 1 \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[subnet-xxx,subnet-yyy],securityGroups=[sg-xxx],assignPublicIp=ENABLED}" \
+  --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:...,containerName=tokenization-backend,containerPort=3010
+```
+
 ## 🚀 Infrastructure Status
-- **Last Updated**: November 6, 2025 - 01:45 UTC
+- **Last Updated**: Wed Nov  6 21:45:40 EST 2025
 - **Status**: ✅ All systems operational
-- **Database**: PostgreSQL 15.14 (Fixed from 15.4)
-- **S3 Bucket Policy**: Fixed and validated
-- **Load Balancer**: Active and ready
-- **ECS Cluster**: Ready for deployments
-- **CI/CD**: Testing deployment pipeline 🔄
+- **Database**: PostgreSQL 15.14
+- **Infrastructure**: Freshly deployed and validated
+- **CI/CD**: Fully automated and working
 
 ## ✨ Features
 
 - 🔥 **Ultra-fast** build and runtime with Bun
 - ⚛️ **Modern React** frontend with TypeScript
 - ☁️ **AWS Cloud** infrastructure with CloudFormation
-- 🌐 **Global CDN** with CloudFront distribution
-- 🔒 **Secure** HTTPS with automatic certificates
+- 🌐 **Load Balanced** with Application Load Balancer
+- 🔒 **Secure** database with proper VPC isolation
 - 🚀 **CI/CD Ready** with GitHub Actions
 - 📱 **Responsive** design for all devices
 - 🛠️ **Developer friendly** with hot reload and fast builds
@@ -39,14 +124,13 @@ A modern tokenization application built with Bun runtime, featuring React fronte
 - **Styling**: Modern CSS with responsive design
 
 ### Backend & Infrastructure  
-- **Cloud**: AWS (S3, CloudFront, CloudFormation)
-- **Backend**: Bun runtime with TypeScript
-- **API**: GraphQL with PostgreSQL database  
-- **Container**: Docker with multi-stage builds
-- **Orchestration**: AWS ECS Fargate with ALB
-- **CDN**: CloudFront with edge caching
-- **Security**: IAM roles and Origin Access Control
-- **CI/CD**: GitHub Actions
+- **Cloud**: AWS (ECS, RDS, ALB, S3, ECR)
+- **Backend**: Bun runtime with GraphQL/TypeScript
+- **Database**: PostgreSQL 15.14 with auto-migration
+- **Container**: Docker with ECS Fargate
+- **Load Balancer**: Application Load Balancer
+- **Storage**: S3 with static website hosting
+- **CI/CD**: GitHub Actions with automated deployments
 
 ## 🚀 Quick Start
 
