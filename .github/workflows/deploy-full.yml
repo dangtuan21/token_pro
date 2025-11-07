@@ -1,0 +1,49 @@
+name: Deploy Full Stack
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'README.md'
+      - '.github/workflows/deploy-full.yml'
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      deploy_backend:
+        description: 'Deploy backend?'
+        required: true
+        default: true
+        type: boolean
+      deploy_frontend:
+        description: 'Deploy frontend?'
+        required: true
+        default: true
+        type: boolean
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  trigger-deployments:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Trigger Backend Deployment
+      if: ${{ github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_backend == '' }}
+      uses: ./.github/workflows/deploy-backend.yml
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Trigger Frontend Deployment  
+      if: ${{ github.event.inputs.deploy_frontend == 'true' || github.event.inputs.deploy_frontend == '' }}
+      uses: ./.github/workflows/deploy-frontend.yml
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Deployment Summary
+      run: |
+        echo "🚀 Full stack deployment initiated!"
+        echo "Backend: ${{ github.event.inputs.deploy_backend != 'false' && '✅ Deployed' || '⏭️ Skipped' }}"
+        echo "Frontend: ${{ github.event.inputs.deploy_frontend != 'false' && '✅ Deployed' || '⏭️ Skipped' }}"

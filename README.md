@@ -39,11 +39,8 @@ aws cloudformation describe-stacks \
   --query 'Stacks[0].Outputs' \
   --output table
 
-# Key outputs you'll need:
-# - LoadBalancerDNS: Update frontend GraphQL endpoint
-# - DatabaseEndpoint: Verify task definition has correct DB host
-# - FrontendBucketName: Update CI/CD S3 sync target
-# - ECRRepositoryURI: For Docker image pushes
+# Auto-update S3 bucket name in workflows
+./scripts/update-bucket-name.sh
 ```
 
 **Update these configuration files:**
@@ -61,27 +58,47 @@ aws cloudformation describe-stacks \
    }
    ```
 
-3. **CI/CD S3 Target** (`.github/workflows/deploy.yml`):
-   ```yaml
-   aws s3 sync dist/ s3://YOUR_FRONTEND_BUCKET_NAME --delete
-   ```
+3. **CI/CD Workflows** (automatically configured via script):
 
-### **Phase 3: Run CI/CD** 🚀
+### **Phase 3: Intelligent CI/CD** 🚀
 
-Commit configuration changes to trigger automated deployment:
+The deployment system now uses **path-based triggers** for maximum efficiency:
 
+#### 🎯 **Smart Deployment Triggers:**
+- **Frontend changes** (`frontend/**`) → Only deploys to S3 (~30 seconds)
+- **Backend changes** (`backend/**`, `.aws/**`) → Only deploys to ECS (~3-5 minutes)
+- **README changes** → Triggers full deployment option
+- **Manual triggers** → Deploy frontend, backend, or both
+
+#### 📁 **Available Workflows:**
 ```bash
+# Frontend-only deployment (fast)
+.github/workflows/deploy-frontend.yml
+
+# Backend-only deployment (when needed)  
+.github/workflows/deploy-backend.yml
+
+# Full-stack deployment (manual trigger)
+.github/workflows/deploy-full.yml
+
+# Legacy workflow (emergency only)
+.github/workflows/deploy.yml
+```
+
+#### ⚡ **Example Scenarios:**
+- **Edit React component** → Auto-deploys frontend only (30s)
+- **Update API endpoint** → Auto-deploys backend only (3-5min)
+- **Manual full deploy** → Use GitHub Actions "Run workflow" button
+
+#### 🛠️ **Setup Commands:**
+```bash
+# Auto-update S3 bucket name in workflows
+./scripts/update-bucket-name.sh
+
 # Commit configuration updates
 git add .
-git commit -m "feat: configure endpoints for fresh infrastructure"
+git commit -m "feat: configure smart deployment workflows"
 git push origin main
-
-# This triggers GitHub Actions which will:
-# 1. Build and test the application
-# 2. Build Docker image and push to ECR
-# 3. Update ECS task definition
-# 4. Deploy to ECS cluster (creates service if needed)
-# 5. Deploy frontend to S3
 ```
 
 **Manual ECS Service Creation** (if first deployment):
@@ -102,7 +119,8 @@ aws ecs create-service \
 - **Status**: ✅ All systems operational
 - **Database**: PostgreSQL 15.14
 - **Infrastructure**: Freshly deployed and validated
-- **CI/CD**: Fully automated and working
+- **CI/CD**: ⚡ Smart path-based deployment (NEW!)
+- **Deployment Speed**: Frontend ~30s | Backend ~3-5min
 
 ## ✨ Features
 

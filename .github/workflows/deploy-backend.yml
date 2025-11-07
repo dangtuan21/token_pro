@@ -1,13 +1,13 @@
-name: Deploy to AWS (LEGACY - Use separate workflows)
-
-# This workflow is now deprecated
-# Use deploy-backend.yml for backend changes
-# Use deploy-frontend.yml for frontend changes  
-# Use deploy-full.yml for manual full deployments
+name: Deploy Backend to ECS
 
 on:
-  # Disabled automatic triggers - use specific workflows instead
-  workflow_dispatch:  # Only allow manual trigger for emergencies
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'backend/**'
+      - '.aws/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:  # Allow manual trigger
 
 env:
   AWS_REGION: us-east-1
@@ -18,7 +18,7 @@ env:
   CONTAINER_NAME: tokenization-backend
 
 jobs:
-  test:
+  test-backend:
     runs-on: ubuntu-latest
     
     services:
@@ -50,11 +50,6 @@ jobs:
         cd backend
         bun install
 
-    - name: Install frontend dependencies
-      run: |
-        cd frontend
-        bun install
-
     - name: Run backend tests
       env:
         DATABASE_URL: postgresql://testuser:testpass@localhost:5432/tokendb_test
@@ -63,17 +58,8 @@ jobs:
         # Add your test commands here when you have tests
         echo "Backend tests would run here"
 
-    - name: Build frontend
-      run: |
-        # Install Bun
-        curl -fsSL https://bun.sh/install | bash
-        export PATH="$HOME/.bun/bin:$PATH"
-        cd frontend
-        bun install
-        bun run build
-
-  build-and-deploy:
-    needs: test
+  deploy-backend:
+    needs: test-backend
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 
@@ -98,8 +84,9 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # Build a docker container and push it to ECR
+        echo "🔨 Building backend Docker image..."
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
+        echo "📤 Pushing to ECR..."
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
@@ -123,12 +110,9 @@ jobs:
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
 
-    - name: Deploy frontend to S3
+    - name: Deployment Summary
       run: |
-        # Install Bun
-        curl -fsSL https://bun.sh/install | bash
-        export PATH="$HOME/.bun/bin:$PATH"
-        cd frontend
-        bun install
-        bun run build
-        aws s3 sync dist/ s3://tokenization-frontend-273204284763 --delete
+        echo "✅ Backend deployment completed!"
+        echo "📦 Docker image: ${{ steps.build-image.outputs.image }}"
+        echo "🚀 ECS Service: ${{ env.ECS_SERVICE }}"
+        echo "🏗️ Cluster: ${{ env.ECS_CLUSTER }}"

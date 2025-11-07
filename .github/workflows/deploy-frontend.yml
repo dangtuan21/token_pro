@@ -1,0 +1,87 @@
+name: Deploy Frontend to S3
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: tokenization-frontend-273204284763
+
+jobs:
+  test-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        bun install
+
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        # Add your test commands here when you have tests
+        echo "Frontend tests would run here"
+        # bun test (when you add tests)
+
+    - name: Build frontend (test build)
+      run: |
+        cd frontend
+        bun run build
+
+  deploy-frontend:
+    needs: test-frontend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Build and deploy frontend
+      run: |
+        cd frontend
+        echo "📦 Installing dependencies..."
+        bun install
+        echo "🔨 Building frontend..."
+        bun run build
+        echo "📤 Deploying to S3..."
+        aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete --cache-control "max-age=31536000,public" --exclude "*.html" --exclude "*.json"
+        aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete --cache-control "max-age=0,no-cache,no-store,must-revalidate" --include "*.html" --include "*.json"
+
+    - name: Invalidate CloudFront cache (if applicable)
+      run: |
+        # Add CloudFront distribution ID if you have one
+        # aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --paths "/*"
+        echo "📡 CloudFront invalidation would run here (add distribution ID if needed)"
+
+    - name: Deployment Summary
+      run: |
+        echo "✅ Frontend deployment completed!"
+        echo "🌐 S3 Bucket: ${{ env.S3_BUCKET }}"
+        echo "🚀 Frontend URL: https://${{ env.S3_BUCKET }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com/"
