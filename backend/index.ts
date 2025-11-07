@@ -8,6 +8,8 @@ import { initializeDatabase } from './src/init-db';
 // Initialize database on startup
 await initializeDatabase();
 
+console.log('🚀 Backend server initializing...');
+
 // Create Elysia app with GraphQL and CORS
 const app = new Elysia()
   .use(cors({
