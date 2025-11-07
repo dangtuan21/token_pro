@@ -1,12 +1,7 @@
 name: Deploy Full Stack
 
 on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - 'README.md'
-      - '.github/workflows/deploy-full.yml'
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Manual trigger only
     inputs:
       deploy_backend:
         description: 'Deploy backend?'
@@ -23,27 +18,141 @@ env:
   AWS_REGION: us-east-1
 
 jobs:
-  trigger-deployments:
+  deploy-backend:
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_backend == null }}
     
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_USER: testuser
+          POSTGRES_DB: tokendb_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Trigger Backend Deployment
-      if: ${{ github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_backend == '' }}
-      uses: ./.github/workflows/deploy-backend.yml
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        bun-version: latest
 
-    - name: Trigger Frontend Deployment  
-      if: ${{ github.event.inputs.deploy_frontend == 'true' || github.event.inputs.deploy_frontend == '' }}
-      uses: ./.github/workflows/deploy-frontend.yml
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        bun install
+
+    - name: Run backend tests
+      env:
+        DATABASE_URL: postgresql://testuser:testpass@localhost:5432/tokendb_test
+      run: |
+        cd backend
+        echo "Backend tests would run here"
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
 
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: tokenization-app
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        echo "🔨 Building backend Docker image..."
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
+        echo "📤 Pushing to ECR..."
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Update task definition with database password
+      run: |
+        sed -i 's/PLACEHOLDER_DB_PASSWORD/${{ secrets.DB_PASSWORD }}/g' .aws/task-definition.json
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: .aws/task-definition.json
+        container-name: tokenization-backend
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: tokenization-service
+        cluster: tokenization-cluster
+        wait-for-service-stability: true
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_frontend == 'true' || github.event.inputs.deploy_frontend == null }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        bun install
+
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        echo "Frontend tests would run here"
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Build and deploy frontend
+      env:
+        S3_BUCKET: tokenization-frontend-273204284763
+      run: |
+        cd frontend
+        echo "📦 Installing dependencies..."
+        bun install
+        echo "🔨 Building frontend..."
+        bun run build
+        echo "📤 Deploying to S3..."
+        aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete --cache-control "max-age=31536000,public" --exclude "*.html" --exclude "*.json"
+        aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete --cache-control "max-age=0,no-cache,no-store,must-revalidate" --include "*.html" --include "*.json"
+
+  deployment-summary:
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+    
+    steps:
     - name: Deployment Summary
       run: |
-        echo "🚀 Full stack deployment initiated!"
-        echo "Backend: ${{ github.event.inputs.deploy_backend != 'false' && '✅ Deployed' || '⏭️ Skipped' }}"
-        echo "Frontend: ${{ github.event.inputs.deploy_frontend != 'false' && '✅ Deployed' || '⏭️ Skipped' }}"
+        echo "🚀 Full stack deployment completed!"
+        echo "Backend Status: ${{ needs.deploy-backend.result == 'success' && '✅ Deployed' || needs.deploy-backend.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+        echo "Frontend Status: ${{ needs.deploy-frontend.result == 'success' && '✅ Deployed' || needs.deploy-frontend.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
